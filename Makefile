@@ -1,5 +1,5 @@
 CC = gcc
-IN = main.c src/main_state.c src/glad/glad.c src/tilemap.c
+IN = main.c src/main_state.c src/glad/glad.c src/tilemap.c src/particles.c
 OUT = main.out
 CFLAGS = -Wall -DGLFW_INCLUDE_NONE -Wno-incompatible-pointer-types
 LFLAGS = -ldl -lm -lglfw
@@ -10,7 +10,7 @@ IFLAGS = -I. -I./include
 clean:
 	rm -f $(OUT)
 
-build: $(IN) include/main_state.h include/stb_image.h src/tilemap.h
+build: $(IN) include/main_state.h include/stb_image.h src/tilemap.h src/particles.h
 	$(CC) $(IN) -o $(OUT) $(CFLAGS) $(LFLAGS) $(IFLAGS)
 
 run: $(OUT)
