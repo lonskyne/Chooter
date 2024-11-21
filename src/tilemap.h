@@ -1,7 +1,7 @@
 #include <rafgl.h>
 
 #define WORLD_SIZE 128
-#define NUMBER_OF_TILES 28
+#define NUMBER_OF_TILES 9
 #define TILE_SIZE 64
 
 extern rafgl_raster_t tiles[NUMBER_OF_TILES];

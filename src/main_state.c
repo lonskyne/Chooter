@@ -6,6 +6,7 @@
 #include <math.h>
 #include <rafgl.h>
 #include <stdio.h>
+#include <time.h>
 
 rafgl_raster_t tiles[NUMBER_OF_TILES];
 int tile_world[WORLD_SIZE][WORLD_SIZE];
@@ -35,6 +36,8 @@ int hero_speed = 150;
 int hero_rotation = 0;
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height) {
+  srand(time(NULL));
+
   raster_width = width;
   raster_height = height;
 
@@ -46,7 +49,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height) {
 
   // Loading tile sprites from disk to tile array
   for (int i = 0; i < NUMBER_OF_TILES; i++) {
-    sprintf(tile_path, "res/tiles/tile%d.png", i + 1);
+    sprintf(tile_path, "res/tiles/tile%d.png", i);
     rafgl_raster_load_from_image(&tiles[i], tile_path);
   }
 

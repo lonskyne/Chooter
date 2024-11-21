@@ -1,21 +1,26 @@
 #include "tilemap.h"
+#include <stdio.h>
 
 void generate_map(int map[WORLD_SIZE][WORLD_SIZE]) {
   int helper[WORLD_SIZE][WORLD_SIZE];
+  // Must be an odd number to take effect. (4 is same as 3)
   int iterations = 5;
 
   // Generate random noise with 45% of walls
   for (int i = 0; i < WORLD_SIZE; i++) {
     for (int j = 0; j < WORLD_SIZE; j++) {
-      if (randf() < 0.45f)
+      float random = rand() % 100;
+      if (random < 45)
         helper[i][j] = 1;
       else
         helper[i][j] = 0;
     }
   }
 
-  int **to = map, **from = helper;
+  int (*to)[WORLD_SIZE] = map;
+  int (*from)[WORLD_SIZE] = helper;
 
+  // Go trough iterations, every time 
   for(int it = 0; it < iterations; it++) {
 
     for(int i = 0; i < WORLD_SIZE; i++) {
@@ -33,23 +38,35 @@ void generate_map(int map[WORLD_SIZE][WORLD_SIZE]) {
 
         if(neighbours >= 5)
           to[i][j] = 1;
+        else
+          to[i][j]= 0;
       }
     }
 
-    int **temp = to;
+    int (*temp)[WORLD_SIZE] = to;
     to = from;
     from = temp;
   }
+
 }
 
 void init_tilemap(void) {
   int x, y;
   int cave_map[WORLD_SIZE][WORLD_SIZE];
+  generate_map(cave_map);
 
   for (y = 0; y < WORLD_SIZE; y++) {
     for (x = 0; x < WORLD_SIZE; x++) {
-      generate_map(cave_map);
-      tile_world[y][x] = 3 + rand() % 2;
+      if(cave_map[y][x] == 1)
+        tile_world[y][x] = 0; 
+      else {
+        if(rand() % 100 < 50) {
+          tile_world[y][x] = 1;
+        }
+        else {
+          tile_world[y][x] = 2 + rand() % (NUMBER_OF_TILES - 2);
+        }
+      }
     }
   }
 }
