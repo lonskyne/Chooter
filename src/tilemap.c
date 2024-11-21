@@ -56,7 +56,7 @@ void init_tilemap(int tile_world[WORLD_SIZE][WORLD_SIZE]) {
 
   for (y = 0; y < WORLD_SIZE; y++) {
     for (x = 0; x < WORLD_SIZE; x++) {
-      if(cave_map[y][x] == 1)
+      if(cave_map[y][x] == 1 || y == 0 || x == 0 || y == WORLD_SIZE - 1 || x == WORLD_SIZE - 1)
         tile_world[y][x] = 0; 
       else {
         // When generating walkable terrain, half is blank brown tile

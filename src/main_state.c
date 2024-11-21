@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <time.h>
 
+#define VIEW_DISTANCE  300
+
 rafgl_raster_t tiles[NUMBER_OF_TILES];
 int tile_world[WORLD_SIZE][WORLD_SIZE];
 particle_t particles[MAX_PARTICLES];
@@ -21,7 +23,6 @@ static int raster_width = RASTER_WIDTH, raster_height = RASTER_HEIGHT;
 static char save_file[256];
 int save_file_no = 0;
 
-int selected_x, selected_y;
 int hero_tile_x, hero_tile_y;
 
 int hero_pos_x = RASTER_WIDTH / 2;
@@ -35,6 +36,23 @@ float selector = 0;
 
 int hero_speed = 200;
 int hero_rotation = 0;
+
+int debug_mode = 0;
+
+// TODO make vision impair more gradual not just circle
+void impair_vision(rafgl_raster_t *raster) {
+  rafgl_pixel_rgb_t resulting;
+
+  for (int y = 0; y < raster_height; y++) {
+    for (int x = 0; x < raster_width; x++) {
+      int cx = raster_width / 2, cy = raster_height / 2;
+      resulting.rgba = rafgl_RGB(0, 0, 0);
+
+      if(rafgl_distance2D(cx, cy, x, y) > VIEW_DISTANCE)
+        pixel_at_m((*raster), x, y) = resulting;
+    }
+  }
+}
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height) {
   srand(time(NULL));
@@ -64,20 +82,19 @@ void main_state_update(GLFWwindow *window, float delta_time,
   int i, gen = 5, radius = 10;
   float angle, speed;
 
-  camx = hero_pos_x - 450;
-  camy = hero_pos_y - 450;
-
-  // Calculate wich tile is currently selected
-  selected_x = rafgl_clampi((game_data->mouse_pos_x + camx) / TILE_SIZE, 0,
-                            WORLD_SIZE - 1);
-  selected_y = rafgl_clampi((game_data->mouse_pos_y + camy) / TILE_SIZE, 0,
-                            WORLD_SIZE - 1);
+  camx = hero_pos_x - 480;
+  camy = hero_pos_y - 480;
 
   // The tile the player is currently on
   hero_tile_x = rafgl_clampi((hero_pos_x + 25) / TILE_SIZE, 0,
                             WORLD_SIZE - 1);
   hero_tile_y = rafgl_clampi((hero_pos_y + 27) / TILE_SIZE, 0,
                             WORLD_SIZE - 1);
+
+  if(game_data->keys_down[RAFGL_KEY_F1])
+    debug_mode = 1;
+  if(game_data->keys_down[RAFGL_KEY_F2])
+    debug_mode = 0;
 
   // Shooting, if shooting then stop moving and rotating
   if (game_data->keys_down[RAFGL_KEY_SPACE]) {
@@ -137,16 +154,14 @@ void main_state_update(GLFWwindow *window, float delta_time,
   int x, y;
   float xn, yn;
 
-  rafgl_pixel_rgb_t sampled, resulting;
+  rafgl_pixel_rgb_t resulting;
 
   for (y = 0; y < raster_height; y++) {
     yn = 1.0f * y / raster_height;
     for (x = 0; x < raster_width; x++) {
       xn = 1.0f * x / raster_width;
 
-      resulting = sampled;
-
-      resulting.rgba = rafgl_RGB(0, 0, 0);
+      resulting.rgba = rafgl_RGB(20, 20, 20);
 
       pixel_at_m(raster, x, y) = resulting;
     }
@@ -159,7 +174,11 @@ void main_state_update(GLFWwindow *window, float delta_time,
   rafgl_raster_draw_spritesheet(&raster, &hero, 0, hero_rotation,
                                 hero_pos_x - camx, hero_pos_y - camy);
                                 
-  rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx, hero_tile_y * TILE_SIZE - camy, TILE_SIZE, TILE_SIZE, rafgl_RGB(255, 255, 0));
+  if(debug_mode) {
+    rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx, hero_tile_y * TILE_SIZE - camy, TILE_SIZE, TILE_SIZE, rafgl_RGB(255, 255, 0));
+  } else {
+    impair_vision(&raster);
+  }
 
 
   // Screenshot
