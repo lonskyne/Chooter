@@ -22,6 +22,7 @@ static char save_file[256];
 int save_file_no = 0;
 
 int selected_x, selected_y;
+int hero_tile_x, hero_tile_y;
 
 int hero_pos_x = RASTER_WIDTH / 2;
 int hero_pos_y = RASTER_HEIGHT / 2;
@@ -32,7 +33,7 @@ int camy = RASTER_HEIGHT / 2;
 float location = 0;
 float selector = 0;
 
-int hero_speed = 150;
+int hero_speed = 200;
 int hero_rotation = 0;
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height) {
@@ -53,7 +54,7 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height) {
     rafgl_raster_load_from_image(&tiles[i], tile_path);
   }
 
-  init_tilemap();
+  init_tilemap(tile_world);
 
   rafgl_texture_init(&texture);
 }
@@ -70,6 +71,12 @@ void main_state_update(GLFWwindow *window, float delta_time,
   selected_x = rafgl_clampi((game_data->mouse_pos_x + camx) / TILE_SIZE, 0,
                             WORLD_SIZE - 1);
   selected_y = rafgl_clampi((game_data->mouse_pos_y + camy) / TILE_SIZE, 0,
+                            WORLD_SIZE - 1);
+
+  // The tile the player is currently on
+  hero_tile_x = rafgl_clampi((hero_pos_x + 25) / TILE_SIZE, 0,
+                            WORLD_SIZE - 1);
+  hero_tile_y = rafgl_clampi((hero_pos_y + 27) / TILE_SIZE, 0,
                             WORLD_SIZE - 1);
 
   // Shooting, if shooting then stop moving and rotating
@@ -99,15 +106,31 @@ void main_state_update(GLFWwindow *window, float delta_time,
         hero_rotation = 28;
     }
 
+
+    int future_hero_pos_x = hero_pos_x;
+    int future_hero_pos_y = hero_pos_y;
+
     // Movement
     if (game_data->keys_down[RAFGL_KEY_W]) {
-      hero_pos_y = hero_pos_y - hero_speed * delta_time;
+      future_hero_pos_y = hero_pos_y - hero_speed * delta_time;
     } else if (game_data->keys_down[RAFGL_KEY_S]) {
-      hero_pos_y = hero_pos_y + hero_speed * delta_time;
+      future_hero_pos_y = hero_pos_y + hero_speed * delta_time;
     } else if (game_data->keys_down[RAFGL_KEY_A]) {
-      hero_pos_x = hero_pos_x - hero_speed * delta_time;
+      future_hero_pos_x = hero_pos_x - hero_speed * delta_time;
     } else if (game_data->keys_down[RAFGL_KEY_D]) {
-      hero_pos_x = hero_pos_x + hero_speed * delta_time;
+      future_hero_pos_x = hero_pos_x + hero_speed * delta_time;
+    }
+
+    // Calculate the tile we would end up after current frame movement
+    int future_hero_tile_x = rafgl_clampi((future_hero_pos_x + 25) / TILE_SIZE, 0,
+                            WORLD_SIZE - 1);
+    int future_hero_tile_y = rafgl_clampi((future_hero_pos_y + 27) / TILE_SIZE, 0,
+                            WORLD_SIZE - 1);
+
+    // If the future position does not put us in a wall, update current position
+    if(tile_world[future_hero_tile_y][future_hero_tile_x] != 0) {
+      hero_pos_x = future_hero_pos_x;
+      hero_pos_y = future_hero_pos_y;
     }
   }
 
@@ -135,6 +158,9 @@ void main_state_update(GLFWwindow *window, float delta_time,
   draw_particles(&raster);
   rafgl_raster_draw_spritesheet(&raster, &hero, 0, hero_rotation,
                                 hero_pos_x - camx, hero_pos_y - camy);
+                                
+  rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx, hero_tile_y * TILE_SIZE - camy, TILE_SIZE, TILE_SIZE, rafgl_RGB(255, 255, 0));
+
 
   // Screenshot
   if (game_data->keys_pressed[RAFGL_KEY_PRINT_SCREEN]) {

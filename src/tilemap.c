@@ -1,5 +1,4 @@
 #include "tilemap.h"
-#include <stdio.h>
 
 void generate_map(int map[WORLD_SIZE][WORLD_SIZE]) {
   int helper[WORLD_SIZE][WORLD_SIZE];
@@ -20,13 +19,13 @@ void generate_map(int map[WORLD_SIZE][WORLD_SIZE]) {
   int (*to)[WORLD_SIZE] = map;
   int (*from)[WORLD_SIZE] = helper;
 
-  // Go trough iterations, every time 
+  // Go trough iterations, every time changing from/to matrixes
   for(int it = 0; it < iterations; it++) {
 
     for(int i = 0; i < WORLD_SIZE; i++) {
       for(int j = 0; j < WORLD_SIZE; j++) {
         int neighbours = 0;
-
+        // Check 3x3 neighbourhood of current cell
         for(int k = -1; k < 2; k++) {
           for(int l = -1; l < 2; l++) {
             if(i + k >= 0 && i + k < WORLD_SIZE && j + l >= 0 && j + l < WORLD_SIZE) {
@@ -50,7 +49,7 @@ void generate_map(int map[WORLD_SIZE][WORLD_SIZE]) {
 
 }
 
-void init_tilemap(void) {
+void init_tilemap(int tile_world[WORLD_SIZE][WORLD_SIZE]) {
   int x, y;
   int cave_map[WORLD_SIZE][WORLD_SIZE];
   generate_map(cave_map);
@@ -60,10 +59,12 @@ void init_tilemap(void) {
       if(cave_map[y][x] == 1)
         tile_world[y][x] = 0; 
       else {
-        if(rand() % 100 < 50) {
+        // When generating walkable terrain, half is blank brown tile
+        if(rand() % 2 < 1) {
           tile_world[y][x] = 1;
         }
         else {
+          // And half are random other types
           tile_world[y][x] = 2 + rand() % (NUMBER_OF_TILES - 2);
         }
       }
