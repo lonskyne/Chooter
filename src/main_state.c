@@ -1,5 +1,6 @@
 #include "particles.h"
 #include "tilemap.h"
+#include "roach.h"
 #include <game_constants.h>
 #include <glad/glad.h>
 #include <main_state.h>
@@ -13,10 +14,12 @@
 rafgl_raster_t tiles[NUMBER_OF_TILES];
 int tile_world[WORLD_SIZE][WORLD_SIZE];
 particle_t particles[MAX_PARTICLES];
+roach_t roaches[MAX_ROACHES];
 
 static rafgl_raster_t raster;
 static rafgl_texture_t texture;
 static rafgl_spritesheet_t hero;
+
 
 static int raster_width = RASTER_WIDTH, raster_height = RASTER_HEIGHT;
 
@@ -37,7 +40,10 @@ float selector = 0;
 int hero_speed = 200;
 int hero_rotation = 0;
 
-int debug_mode = 0;
+int roach_anim_frame = 0;
+int roach_hover_frames = 10;
+
+int debug_mode = 1;
 
 // TODO make vision impair more gradual not just circle
 void impair_vision(rafgl_raster_t *raster) {
@@ -63,6 +69,10 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height) {
   rafgl_raster_init(&raster, raster_width, raster_height);
 
   rafgl_spritesheet_init(&hero, "res/images/character.png", 1, 29);
+  
+  for(int i = 0; i < MAX_ROACHES; i++)
+    rafgl_spritesheet_init(&(roaches[i].sprite), "res/images/roach.png", 4, 29);
+
 
   char tile_path[256];
 
@@ -73,8 +83,9 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height) {
   }
 
   init_tilemap(tile_world);
-
+  roaches_init(hero_pos_x, hero_pos_y, roaches);
   rafgl_texture_init(&texture);
+
 }
 
 void main_state_update(GLFWwindow *window, float delta_time,
@@ -84,6 +95,13 @@ void main_state_update(GLFWwindow *window, float delta_time,
 
   camx = hero_pos_x - 480;
   camy = hero_pos_y - 480;
+
+  roach_hover_frames--;
+  if(roach_hover_frames == 0) {
+    roach_anim_frame++;
+    roach_anim_frame%=4;
+    roach_hover_frames = 10;
+  }
 
   // The tile the player is currently on
   hero_tile_x = rafgl_clampi((hero_pos_x + 25) / TILE_SIZE, 0,
@@ -171,9 +189,26 @@ void main_state_update(GLFWwindow *window, float delta_time,
 
   render_tilemap(&raster, camx, camy, raster_width, raster_height);
   draw_particles(&raster);
+  draw_roaches(&raster, roaches);
   rafgl_raster_draw_spritesheet(&raster, &hero, 0, hero_rotation,
                                 hero_pos_x - camx, hero_pos_y - camy);
-                                
+
+  // TODO Make this draw_roaches function i roach.c, but it does not work
+  for (int i = 0; i < MAX_ROACHES; i++) {
+    if (roaches[i].life <= 0)
+      continue;
+    
+    roaches[i].hover_frame--;
+    if(roaches[i].hover_frame == 0) {
+        roaches[i].anim_frame++;
+        roaches[i].anim_frame %= 4;
+        roaches[i].hover_frame = 10;
+    }
+
+    rafgl_raster_draw_spritesheet(&raster, &(roaches[i].sprite), roaches[i].anim_frame, roaches[i].rotation,
+                                roaches[i].x, roaches[i].y);
+  }
+                            
   if(debug_mode) {
     rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx, hero_tile_y * TILE_SIZE - camy, TILE_SIZE, TILE_SIZE, rafgl_RGB(255, 255, 0));
   } else {
