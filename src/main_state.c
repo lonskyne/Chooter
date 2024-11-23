@@ -123,6 +123,9 @@ void main_state_update(GLFWwindow *window, float delta_time,
         particles[i].y = hero_pos_y - camy + 32;
 
         angle = hero_rotation * 12 * M_PI / 180;
+
+        hurt_roaches(delta_time, angle, hero_pos_x, hero_pos_y);
+
         speed = (0.3f + 0.1 * randf()) * radius * 10;
         particles[i].dx = cosf(angle) * speed;
         particles[i].dy = sinf(angle) * speed;
@@ -186,28 +189,14 @@ void main_state_update(GLFWwindow *window, float delta_time,
   }
 
   update_particles(delta_time);
+  update_roaches(delta_time, hero_pos_x, hero_pos_y);
 
   render_tilemap(&raster, camx, camy, raster_width, raster_height);
   draw_particles(&raster);
-  draw_roaches(&raster, roaches);
   rafgl_raster_draw_spritesheet(&raster, &hero, 0, hero_rotation,
                                 hero_pos_x - camx, hero_pos_y - camy);
 
-  // TODO Make this draw_roaches function i roach.c, but it does not work
-  for (int i = 0; i < MAX_ROACHES; i++) {
-    if (roaches[i].life <= 0)
-      continue;
-    
-    roaches[i].hover_frame--;
-    if(roaches[i].hover_frame == 0) {
-        roaches[i].anim_frame++;
-        roaches[i].anim_frame %= 4;
-        roaches[i].hover_frame = 10;
-    }
-
-    rafgl_raster_draw_spritesheet(&raster, &(roaches[i].sprite), roaches[i].anim_frame, roaches[i].rotation,
-                                roaches[i].x, roaches[i].y);
-  }
+  draw_roaches(&raster, camx, camy);
                             
   if(debug_mode) {
     rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx, hero_tile_y * TILE_SIZE - camy, TILE_SIZE, TILE_SIZE, rafgl_RGB(255, 255, 0));
