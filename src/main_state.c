@@ -1,6 +1,6 @@
 #include "particles.h"
-#include "tilemap.h"
 #include "roach.h"
+#include "tilemap.h"
 #include <game_constants.h>
 #include <glad/glad.h>
 #include <main_state.h>
@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <time.h>
 
-#define VIEW_DISTANCE  300
+#define VIEW_DISTANCE 300
 
 rafgl_raster_t tiles[NUMBER_OF_TILES];
 int tile_world[WORLD_SIZE][WORLD_SIZE];
@@ -20,7 +20,6 @@ static rafgl_raster_t raster;
 static rafgl_texture_t texture;
 static rafgl_spritesheet_t hero;
 
-
 static int raster_width = RASTER_WIDTH, raster_height = RASTER_HEIGHT;
 
 static char save_file[256];
@@ -28,8 +27,8 @@ int save_file_no = 0;
 
 int hero_tile_x, hero_tile_y;
 
-int hero_pos_x = RASTER_WIDTH / 2;
-int hero_pos_y = RASTER_HEIGHT / 2;
+int hero_pos_x = WORLD_SIZE * 64 / 2;
+int hero_pos_y = WORLD_SIZE * 64 / 2;
 
 int camx = RASTER_WIDTH / 2;
 int camy = RASTER_HEIGHT / 2;
@@ -54,7 +53,7 @@ void impair_vision(rafgl_raster_t *raster) {
       int cx = raster_width / 2, cy = raster_height / 2;
       resulting.rgba = rafgl_RGB(0, 0, 0);
 
-      if(rafgl_distance2D(cx, cy, x, y) > VIEW_DISTANCE)
+      if (rafgl_distance2D(cx, cy, x, y) > VIEW_DISTANCE)
         pixel_at_m((*raster), x, y) = resulting;
     }
   }
@@ -69,10 +68,9 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height) {
   rafgl_raster_init(&raster, raster_width, raster_height);
 
   rafgl_spritesheet_init(&hero, "res/images/character.png", 1, 29);
-  
-  for(int i = 0; i < MAX_ROACHES; i++)
-    rafgl_spritesheet_init(&(roaches[i].sprite), "res/images/roach.png", 4, 29);
 
+  for (int i = 0; i < MAX_ROACHES; i++)
+    rafgl_spritesheet_init(&(roaches[i].sprite), "res/images/roach.png", 4, 29);
 
   char tile_path[256];
 
@@ -83,9 +81,8 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height) {
   }
 
   init_tilemap(tile_world);
-  roaches_init(hero_pos_x, hero_pos_y, roaches);
+  roaches_init(hero_pos_x, hero_pos_y);
   rafgl_texture_init(&texture);
-
 }
 
 void main_state_update(GLFWwindow *window, float delta_time,
@@ -97,21 +94,19 @@ void main_state_update(GLFWwindow *window, float delta_time,
   camy = hero_pos_y - 480;
 
   roach_hover_frames--;
-  if(roach_hover_frames == 0) {
+  if (roach_hover_frames == 0) {
     roach_anim_frame++;
-    roach_anim_frame%=4;
+    roach_anim_frame %= 4;
     roach_hover_frames = 10;
   }
 
   // The tile the player is currently on
-  hero_tile_x = rafgl_clampi((hero_pos_x + 25) / TILE_SIZE, 0,
-                            WORLD_SIZE - 1);
-  hero_tile_y = rafgl_clampi((hero_pos_y + 27) / TILE_SIZE, 0,
-                            WORLD_SIZE - 1);
+  hero_tile_x = rafgl_clampi((hero_pos_x + 25) / TILE_SIZE, 0, WORLD_SIZE - 1);
+  hero_tile_y = rafgl_clampi((hero_pos_y + 27) / TILE_SIZE, 0, WORLD_SIZE - 1);
 
-  if(game_data->keys_down[RAFGL_KEY_F1])
+  if (game_data->keys_down[RAFGL_KEY_F1])
     debug_mode = 1;
-  if(game_data->keys_down[RAFGL_KEY_F2])
+  if (game_data->keys_down[RAFGL_KEY_F2])
     debug_mode = 0;
 
   // Shooting, if shooting then stop moving and rotating
@@ -144,7 +139,6 @@ void main_state_update(GLFWwindow *window, float delta_time,
         hero_rotation = 28;
     }
 
-
     int future_hero_pos_x = hero_pos_x;
     int future_hero_pos_y = hero_pos_y;
 
@@ -160,27 +154,22 @@ void main_state_update(GLFWwindow *window, float delta_time,
     }
 
     // Calculate the tile we would end up after current frame movement
-    int future_hero_tile_x = rafgl_clampi((future_hero_pos_x + 25) / TILE_SIZE, 0,
-                            WORLD_SIZE - 1);
-    int future_hero_tile_y = rafgl_clampi((future_hero_pos_y + 27) / TILE_SIZE, 0,
-                            WORLD_SIZE - 1);
+    int future_hero_tile_x =
+        rafgl_clampi((future_hero_pos_x + 25) / TILE_SIZE, 0, WORLD_SIZE - 1);
+    int future_hero_tile_y =
+        rafgl_clampi((future_hero_pos_y + 27) / TILE_SIZE, 0, WORLD_SIZE - 1);
 
     // If the future position does not put us in a wall, update current position
-    if(tile_world[future_hero_tile_y][future_hero_tile_x] != 0) {
+    if (tile_world[future_hero_tile_y][future_hero_tile_x] != 0) {
       hero_pos_x = future_hero_pos_x;
       hero_pos_y = future_hero_pos_y;
     }
   }
 
-  int x, y;
-  float xn, yn;
-
   rafgl_pixel_rgb_t resulting;
 
-  for (y = 0; y < raster_height; y++) {
-    yn = 1.0f * y / raster_height;
-    for (x = 0; x < raster_width; x++) {
-      xn = 1.0f * x / raster_width;
+  for (int y = 0; y < raster_height; y++) {
+    for (int x = 0; x < raster_width; x++) {
 
       resulting.rgba = rafgl_RGB(20, 20, 20);
 
@@ -197,13 +186,23 @@ void main_state_update(GLFWwindow *window, float delta_time,
                                 hero_pos_x - camx, hero_pos_y - camy);
 
   draw_roaches(&raster, camx, camy);
-                            
-  if(debug_mode) {
-    rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx, hero_tile_y * TILE_SIZE - camy, TILE_SIZE, TILE_SIZE, rafgl_RGB(255, 255, 0));
+
+  if (debug_mode) {
+    for (int i = 0; i < MAX_ROACHES; i++) {
+      if (roaches[i].life > 0) {
+        if ((int)(roaches[i].x - camx) > ROACH_HITBOX_SIZE &&
+            (int)(roaches[i].y - camy) > ROACH_HITBOX_SIZE)
+          rafgl_raster_draw_circle(&raster, (int)(roaches[i].x - camx + 32),
+                                   (int)(roaches[i].y - camy + 32),
+                                   ROACH_HITBOX_SIZE, rafgl_RGB(255, 255, 0));
+      }
+    }
+    rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx,
+                                hero_tile_y * TILE_SIZE - camy, TILE_SIZE,
+                                TILE_SIZE, rafgl_RGB(255, 255, 0));
   } else {
     impair_vision(&raster);
   }
-
 
   // Screenshot
   if (game_data->keys_pressed[RAFGL_KEY_PRINT_SCREEN]) {
