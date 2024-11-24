@@ -29,6 +29,14 @@ void generate_roach(int hero_pos_x, int hero_pos_y) {
   }
 }
 
+float hurt_player(float delta_time, int hero_pos_x, int hero_pos_y, int roach_index) {
+  if(rafgl_distance2D(hero_pos_x, hero_pos_y, roaches[roach_index].x, roaches[roach_index].y) < 20) {
+    return delta_time * (float)ROACH_DAMAGE;
+  }
+
+  return 0.0f;
+}
+
 void roaches_init(int hero_pos_x, int hero_pos_y) {
   for (int i = 0; i < MAX_ROACHES; i++) {
     roaches[i].life = 0;
@@ -56,7 +64,7 @@ void draw_roaches(rafgl_raster_t *raster, int camx, int camy) {
   }
 }
 
-void update_roaches(float delta_time, int hero_pos_x, int hero_pos_y) {
+float update_roaches(float delta_time, int hero_pos_x, int hero_pos_y) {
   spawn_timer -= delta_time;
 
   if (spawn_timer <= 0) {
@@ -66,6 +74,8 @@ void update_roaches(float delta_time, int hero_pos_x, int hero_pos_y) {
       roach_spawn_gap = 0.3;
     spawn_timer = roach_spawn_gap;
   }
+
+  float total_damage = 0;
 
   for (int i = 0; i < MAX_ROACHES; i++) {
     if (roaches[i].life <= 0)
@@ -91,7 +101,11 @@ void update_roaches(float delta_time, int hero_pos_x, int hero_pos_y) {
 
     roaches[i].x += move_x * ROACH_SPEED * delta_time;
     roaches[i].y += move_y * ROACH_SPEED * delta_time;
+
+    total_damage += hurt_player(delta_time, hero_pos_x, hero_pos_y, i);
   }
+
+  return total_damage;
 }
 
 void hurt_roaches(float delta_time, float angle, int hero_pos_x,

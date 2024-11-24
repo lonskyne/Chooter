@@ -5,6 +5,7 @@
 #define ROACH_SPEED 100
 #define ROACH_HITBOX_SIZE 50
 #define INITIAL_ROACH_SPAWN_GAP 3
+#define ROACH_DAMAGE 50
 
 typedef struct _roach_t {
   float x, y, dx, dy;
@@ -22,7 +23,7 @@ void roaches_init(int hero_pos_x, int hero_pos_y);
 
 void draw_roaches(rafgl_raster_t *raster, int camx, int camy);
 
-void update_roaches(float delta_time, int hero_pos_x, int hero_pos_y);
+float update_roaches(float delta_time, int hero_pos_x, int hero_pos_y);
 
 void hurt_roaches(float delta_time, float angle, int hero_pos_x,
                   int hero_pos_y);
