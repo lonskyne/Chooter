@@ -28,8 +28,7 @@ int save_file_no = 0;
 
 int hero_tile_x, hero_tile_y;
 
-int hero_pos_x = WORLD_SIZE * 64 / 2;
-int hero_pos_y = WORLD_SIZE * 64 / 2;
+int hero_pos_x, hero_pos_y;
 
 int camx = RASTER_WIDTH / 2;
 int camy = RASTER_HEIGHT / 2;
@@ -47,17 +46,25 @@ int roach_hover_frames = 10;
 int debug_mode = 0;
 
 void impair_vision(rafgl_raster_t *raster) {
-  rafgl_pixel_rgb_t sample, resulting;
+  rafgl_pixel_rgb_t sampled, resulting;
 
-  for (int y = 0; y < raster_height; y++) {
-    for (int x = 0; x < raster_width; x++) {
-      int cx = raster_width / 2, cy = raster_height / 2;
+  int cx = raster_width / 2, cy = raster_height / 2;
 
-      resulting.rgba = rafgl_RGB(0, 0, 0);
+  for(int y = 0; y < raster_height; y++) {
+      for(int x = 0; x < raster_width; x++)
+      {
+          sampled = pixel_at_m((*raster), x, y);
 
-      if (rafgl_distance2D(cx, cy, x, y) > VIEW_DISTANCE)
-        pixel_at_m((*raster), x, y) = resulting;
-    }
+          int delta_x = cx - x;
+          int delta_y = cy - y;
+          double dist = (delta_x * delta_x + delta_y * delta_y) / (150000.0f);
+
+          resulting.r = rafgl_saturatei(sampled.r *(1.0f - dist));
+          resulting.g = rafgl_saturatei(sampled.g *(1.0f - dist));
+          resulting.b = rafgl_saturatei(sampled.b *(1.0f - dist));
+
+          pixel_at_m((*raster), x, y) = resulting;
+      }
   }
 }
 
@@ -66,12 +73,10 @@ void game_over(rafgl_raster_t *raster) {
 
   for (int y = 0; y < raster_height; y++) {
     for (int x = 0; x < raster_width; x++) {
-      int cx = raster_width / 2, cy = raster_height / 2;
-
       sample = pixel_at_m((*raster), x, y);
 
       int red = sample.r + 100;
-      if(red > 255)
+      if (red > 255)
         red = 255;
 
       resulting.rgba = rafgl_RGB(red, sample.g, sample.b);
@@ -80,7 +85,8 @@ void game_over(rafgl_raster_t *raster) {
     }
   }
 
-  rafgl_raster_draw_string(raster, "GAME OVER", raster_width / 2 - 150, raster_height / 2 - 40, rafgl_RGB(0,0,0), 50);
+  rafgl_raster_draw_string(raster, "GAME OVER", raster_width / 2 - 150,
+                           raster_height / 2 - 40, rafgl_RGB(0, 0, 0), 50);
 }
 
 void main_state_init(GLFWwindow *window, void *args, int width, int height) {
@@ -105,13 +111,23 @@ void main_state_init(GLFWwindow *window, void *args, int width, int height) {
   }
 
   init_tilemap(tile_world);
-  roaches_init(hero_pos_x, hero_pos_y);
+  roaches_init();
   rafgl_texture_init(&texture);
+
+  int chosenx = WORLD_SIZE / 2, choseny = WORLD_SIZE / 2;
+  // Choose position for player spawn where there is no wall.
+  while (tile_world[chosenx][choseny] == 0) {
+    chosenx = rand() % WORLD_SIZE;
+    choseny = rand() % WORLD_SIZE;
+  }
+
+  hero_pos_x = chosenx * 64 + 32;
+  hero_pos_y = choseny * 64 + 32;
 }
 
 void main_state_update(GLFWwindow *window, float delta_time,
                        rafgl_game_data_t *game_data, void *args) {
-  if(hero_health > 0) {
+  if (hero_health > 0) {
     int i, gen = 5, radius = 10;
     float angle, speed;
 
@@ -126,8 +142,10 @@ void main_state_update(GLFWwindow *window, float delta_time,
     }
 
     // The tile the player is currently on
-    hero_tile_x = rafgl_clampi((hero_pos_x + 25) / TILE_SIZE, 0, WORLD_SIZE - 1);
-    hero_tile_y = rafgl_clampi((hero_pos_y + 27) / TILE_SIZE, 0, WORLD_SIZE - 1);
+    hero_tile_x =
+        rafgl_clampi((hero_pos_x + 25) / TILE_SIZE, 0, WORLD_SIZE - 1);
+    hero_tile_y =
+        rafgl_clampi((hero_pos_y + 27) / TILE_SIZE, 0, WORLD_SIZE - 1);
 
     if (game_data->keys_down[RAFGL_KEY_F1])
       debug_mode = 1;
@@ -183,7 +201,8 @@ void main_state_update(GLFWwindow *window, float delta_time,
       int future_hero_tile_y =
           rafgl_clampi((future_hero_pos_y + 27) / TILE_SIZE, 0, WORLD_SIZE - 1);
 
-      // If the future position does not put us in a wall, update current position
+      // If the future position does not put us in a wall, update current
+      // position
       if (tile_world[future_hero_tile_y][future_hero_tile_x] != 0) {
         hero_pos_x = future_hero_pos_x;
         hero_pos_y = future_hero_pos_y;
@@ -217,8 +236,8 @@ void main_state_update(GLFWwindow *window, float delta_time,
           if ((int)(roaches[i].x - camx) > ROACH_HITBOX_SIZE &&
               (int)(roaches[i].y - camy) > ROACH_HITBOX_SIZE)
             rafgl_raster_draw_circle(&raster, (int)(roaches[i].x - camx + 32),
-                                    (int)(roaches[i].y - camy + 32),
-                                    ROACH_HITBOX_SIZE, rafgl_RGB(255, 255, 0));
+                                     (int)(roaches[i].y - camy + 32),
+                                     ROACH_HITBOX_SIZE, rafgl_RGB(255, 255, 0));
         }
       }
       rafgl_raster_draw_rectangle(&raster, hero_tile_x * TILE_SIZE - camx,
@@ -228,13 +247,13 @@ void main_state_update(GLFWwindow *window, float delta_time,
       impair_vision(&raster);
     }
 
-    if(hero_health <= 0) {
+    if (hero_health <= 0) {
       game_over(&raster);
     }
   }
   // Screenshot
-  if (game_data->keys_pressed[RAFGL_KEY_S] && game_data->keys_down[RAFGL_KEY_LEFT_ALT]) {
-    printf("SCREEN");
+  if (game_data->keys_pressed[RAFGL_KEY_S] &&
+      game_data->keys_down[RAFGL_KEY_LEFT_ALT]) {
     sprintf(save_file, "save%d.png", save_file_no++);
     rafgl_raster_save_to_png(&raster, save_file);
   }

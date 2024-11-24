@@ -16,37 +16,37 @@ void generate_map(int map[WORLD_SIZE][WORLD_SIZE]) {
     }
   }
 
-  int (*to)[WORLD_SIZE] = map;
-  int (*from)[WORLD_SIZE] = helper;
+  int(*to)[WORLD_SIZE] = map;
+  int(*from)[WORLD_SIZE] = helper;
 
   // Go trough iterations, every time changing from/to matrixes
-  for(int it = 0; it < iterations; it++) {
+  for (int it = 0; it < iterations; it++) {
 
-    for(int i = 0; i < WORLD_SIZE; i++) {
-      for(int j = 0; j < WORLD_SIZE; j++) {
+    for (int i = 0; i < WORLD_SIZE; i++) {
+      for (int j = 0; j < WORLD_SIZE; j++) {
         int neighbours = 0;
         // Check 3x3 neighbourhood of current cell
-        for(int k = -1; k < 2; k++) {
-          for(int l = -1; l < 2; l++) {
-            if(i + k >= 0 && i + k < WORLD_SIZE && j + l >= 0 && j + l < WORLD_SIZE) {
-              if(from[i + k][j + l] == 1)
+        for (int k = -1; k < 2; k++) {
+          for (int l = -1; l < 2; l++) {
+            if (i + k >= 0 && i + k < WORLD_SIZE && j + l >= 0 &&
+                j + l < WORLD_SIZE) {
+              if (from[i + k][j + l] == 1)
                 neighbours++;
             }
           }
         }
 
-        if(neighbours >= 5)
+        if (neighbours >= 5)
           to[i][j] = 1;
         else
-          to[i][j]= 0;
+          to[i][j] = 0;
       }
     }
 
-    int (*temp)[WORLD_SIZE] = to;
+    int(*temp)[WORLD_SIZE] = to;
     to = from;
     from = temp;
   }
-
 }
 
 void init_tilemap(int tile_world[WORLD_SIZE][WORLD_SIZE]) {
@@ -56,14 +56,15 @@ void init_tilemap(int tile_world[WORLD_SIZE][WORLD_SIZE]) {
 
   for (y = 0; y < WORLD_SIZE; y++) {
     for (x = 0; x < WORLD_SIZE; x++) {
-      if(cave_map[y][x] == 1 || y == 0 || x == 0 || y == WORLD_SIZE - 1 || x == WORLD_SIZE - 1)
-        tile_world[y][x] = 0; 
+      // Add borders
+      if (cave_map[y][x] == 1 || y == 0 || x == 0 || y == WORLD_SIZE - 1 ||
+          x == WORLD_SIZE - 1)
+        tile_world[y][x] = 0;
       else {
         // When generating walkable terrain, half is blank brown tile
-        if(rand() % 2 < 1) {
+        if (rand() % 2 < 1) {
           tile_world[y][x] = 1;
-        }
-        else {
+        } else {
           // And half are random other types
           tile_world[y][x] = 2 + rand() % (NUMBER_OF_TILES - 2);
         }

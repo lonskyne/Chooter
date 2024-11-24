@@ -19,7 +19,7 @@ typedef struct _roach_t {
 
 extern roach_t roaches[MAX_ROACHES];
 
-void roaches_init(int hero_pos_x, int hero_pos_y);
+void roaches_init();
 
 void draw_roaches(rafgl_raster_t *raster, int camx, int camy);
 

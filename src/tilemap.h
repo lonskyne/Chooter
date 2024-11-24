@@ -10,4 +10,5 @@ extern int tile_world[WORLD_SIZE][WORLD_SIZE];
 
 void init_tilemap(int tile_world[WORLD_SIZE][WORLD_SIZE]);
 
-void render_tilemap(rafgl_raster_t *raster, int camx, int camy, int raster_width, int raster_height);
+void render_tilemap(rafgl_raster_t *raster, int camx, int camy,
+                    int raster_width, int raster_height);
