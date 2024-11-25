@@ -38,6 +38,9 @@ float selector = 0;
 
 float hero_health = MAX_HEALTH;
 int hero_speed = 200;
+int hero_rotation_speed = 450;
+
+double hero_rotation_deg = 0;
 int hero_rotation = 0;
 
 int roach_anim_frame = 0;
@@ -173,13 +176,20 @@ void main_state_update(GLFWwindow *window, float delta_time,
     } else {
       // Rotation, we have 29 rotation sprites, every by 12 degrees
       if (game_data->keys_down[RAFGL_KEY_RIGHT]) {
-        hero_rotation++;
-        hero_rotation %= 29;
+        hero_rotation_deg -= hero_rotation_speed * delta_time;
+        if(hero_rotation_deg < 0)
+          hero_rotation_deg += 360.0f;
       } else if (game_data->keys_down[RAFGL_KEY_LEFT]) {
-        hero_rotation--;
-        if (hero_rotation < 0)
-          hero_rotation = 28;
+        hero_rotation_deg += hero_rotation_speed * delta_time;
+        if(hero_rotation_deg > 360)
+          hero_rotation_deg -= 360.0f;
       }
+
+      if (hero_rotation_deg > 180)
+        hero_rotation_deg -= 360;
+
+      hero_rotation = (int)((180.0f - hero_rotation_deg) / 12.0f) % 29;
+
 
       int future_hero_pos_x = hero_pos_x;
       int future_hero_pos_y = hero_pos_y;
