@@ -54,17 +54,23 @@ void impair_vision(rafgl_raster_t *raster) {
   int cx = raster_width / 2, cy = raster_height / 2;
 
   for(int y = 0; y < raster_height; y++) {
-      for(int x = 0; x < raster_width; x++)
-      {
+      for(int x = 0; x < raster_width; x++) {
           sampled = pixel_at_m((*raster), x, y);
 
           int delta_x = cx - x;
           int delta_y = cy - y;
-          double dist = (delta_x * delta_x + delta_y * delta_y) / (150000.0f);
+          float dist_factor =  1.0f - ((delta_x * delta_x + delta_y * delta_y) / (150000.0f));
+          if(dist_factor > 1.0f)
+                  continue;
 
-          resulting.r = rafgl_saturatei(sampled.r *(1.0f - dist));
-          resulting.g = rafgl_saturatei(sampled.g *(1.0f - dist));
-          resulting.b = rafgl_saturatei(sampled.b *(1.0f - dist));
+          if(dist_factor <= 0.0f) {
+              resulting.rgba = 0;
+              resulting.a = 255;
+          } else {
+              resulting.r = sampled.r * dist_factor;
+              resulting.g = sampled.g * dist_factor;
+              resulting.b = sampled.b * dist_factor;
+          }
 
           pixel_at_m((*raster), x, y) = resulting;
       }
